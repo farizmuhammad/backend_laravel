@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\TodoListController;
 use Illuminate\Support\Facades\Route;
 
 
-// Route::patch('/expenses/{id}/approve', [ExpenseController::class, 'update']);
+Route::post('/todo', [TodoListController::class, 'store']);
+Route::get('/chart', [TodoListController::class, 'getChartData']);
