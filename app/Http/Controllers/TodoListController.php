@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TodoListsExport;
 use App\Http\Requests\StoreTodoList;
 use App\Models\TodoList;
 use App\Traits\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelExcel;
 use stdClass;
 
 class TodoListController extends Controller
@@ -17,13 +21,34 @@ class TodoListController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function generateExcelReport()
+    public function generateExcelReport(Request $request)
     {
+        $title = $request->title;
+        $assignee = $request->assignee;
+        $start = $request->start;
+        $end = $request->end;
+        $min = $request->min;
+        $max = $request->max;
+        
+        if (isset($request->priority)) {
+            $priority = array_map('trim', explode(',', $request->priority));
+        }else{
+            $priority = null;
+        }
+
+        if (isset($request->status)) {
+            $status = array_map('trim', explode(',', $request->status));
+        }else{
+            $status = null;
+        }
+        // dd($priority);
+
         try {
-            $todoLists = TodoList::all();
-            return $this->success("Todo Lists", $todoLists);
+            return Excel::download(new TodoListsExport($title, $assignee, $status, $priority, $start, $end, $min, $max), Carbon::now()->timestamp.'_todo_lists.xlsx', ExcelExcel::XLSX);
+            // $todoLists = TodoList::all();
+            // return $this->success("Todo Lists", $todoLists);
         } catch(\Exception $e) {
-            return $this->error($e->getMessage(), $e->getCode());
+            return $this->error($e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
     }
 
