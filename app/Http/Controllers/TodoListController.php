@@ -29,7 +29,7 @@ class TodoListController extends Controller
         $end = $request->end;
         $min = $request->min;
         $max = $request->max;
-        
+
         if (isset($request->priority)) {
             $priority = array_map('trim', explode(',', $request->priority));
         }else{
@@ -45,8 +45,6 @@ class TodoListController extends Controller
 
         try {
             return Excel::download(new TodoListsExport($title, $assignee, $status, $priority, $start, $end, $min, $max), Carbon::now()->timestamp.'_todo_lists.xlsx', ExcelExcel::XLSX);
-            // $todoLists = TodoList::all();
-            // return $this->success("Todo Lists", $todoLists);
         } catch(\Exception $e) {
             return $this->error($e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
@@ -116,9 +114,11 @@ class TodoListController extends Controller
 
                 case 'assignee':
                     $todoLists = TodoList::select("assignee", 
-                        DB::raw('COUNT(*) as total_todos',
-                        'SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) AS total_pending_todos',
-                        'SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_timetracked_completed_todos'),
+                        DB::raw('COUNT(*) as total_todos'),
+                        DB::raw('SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) AS total_pending_todos'),
+                        DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_timetracked_completed_todos'),
+                        // 'SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) AS total_pending_todos',
+                        // 'SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_timetracked_completed_todos'),
                     )
                     ->groupBy('assignee')
                     ->get();
@@ -127,8 +127,8 @@ class TodoListController extends Controller
                     foreach ($todoLists as $key => $todo) {
                         $data = new stdClass();
                         $data->total_todos = $todo->total_todos;
-                        $data->total_pending_todos = $todo->total_pending_todos;
-                        $data->total_timetracked_completed_todos = $todo->total_timetracked_completed_todos;
+                        $data->total_pending_todos = (int)$todo->total_pending_todos;
+                        $data->total_timetracked_completed_todos = (int)$todo->total_timetracked_completed_todos;
                         $assignee_summary->{$todo->assignee} = $data;
                     }
 
